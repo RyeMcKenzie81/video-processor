@@ -674,6 +674,80 @@ def status(detailed):
 
 
 @cli.command()
+@click.option('--limit', default=None, type=int, help='Limit number of videos to analyze')
+@click.option('--test', is_flag=True, help='Test mode: analyze only 1 video')
+def analyze(limit, test):
+    """Analyze videos with Gemini AI."""
+    try:
+        from video_analyzer import VideoAnalyzer
+
+        supabase = get_supabase_client()
+        analyzer = VideoAnalyzer(supabase)
+
+        # Set limit for test mode
+        if test:
+            limit = 1
+            click.echo("Test mode: analyzing 1 video")
+
+        # Get unanalyzed videos
+        videos = analyzer.get_unanalyzed_videos(limit=limit)
+
+        if not videos:
+            click.echo("No videos to analyze")
+            return
+
+        click.echo(f"\nAnalyzing {len(videos)} videos with Gemini AI...")
+        click.echo("This may take several minutes...\n")
+
+        # Process batch
+        results = analyzer.process_batch(limit=limit, show_progress=True)
+
+        # Print summary
+        click.echo(f"\n{'='*60}")
+        click.echo(f"Analysis Complete")
+        click.echo(f"{'='*60}")
+        click.echo(f"Total: {results['total']}")
+        click.echo(f"Completed: {results['completed']}")
+        click.echo(f"Failed: {results['failed']}")
+
+    except Exception as e:
+        logger.error(f"Analyze command failed: {e}")
+        click.echo(f"Error: {e}")
+        sys.exit(1)
+
+
+@cli.command()
+def analyze_status():
+    """Check video analysis status."""
+    try:
+        supabase = get_supabase_client()
+
+        # Get analysis summary
+        analyzed = supabase.table("video_analysis").select("post_id").execute()
+        processed = supabase.table("video_processing_log").select("post_id").eq("status", "completed").execute()
+
+        analyzed_count = len(analyzed.data)
+        processed_count = len(processed.data)
+        pending_count = processed_count - analyzed_count
+
+        click.echo(f"\n{'='*60}")
+        click.echo(f"Video Analysis Status")
+        click.echo(f"{'='*60}")
+        click.echo(f"Videos processed: {processed_count}")
+        click.echo(f"Videos analyzed: {analyzed_count}")
+        click.echo(f"Pending analysis: {pending_count}")
+        click.echo(f"Completion: {(analyzed_count/processed_count*100 if processed_count > 0 else 0):.1f}%")
+
+        if pending_count > 0:
+            click.echo(f"\nRun 'python video_processor.py analyze' to analyze pending videos")
+
+    except Exception as e:
+        logger.error(f"Analyze-status command failed: {e}")
+        click.echo(f"Error: {e}")
+        sys.exit(1)
+
+
+@cli.command()
 @click.option('--keep-days', default=7, type=int, help='Keep files from last N days')
 def cleanup(keep_days):
     """Clean up temporary files."""

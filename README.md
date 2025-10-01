@@ -251,11 +251,65 @@ python video_processor.py status --detailed
 
 ## Phase 2: Gemini AI Analysis
 
-Coming soon:
-- Video analysis with Gemini 2.5 Flash
-- Hook extraction with timestamps
-- Visual storyboard generation
+**Status**: In Development
+
+Analyze downloaded videos with Gemini AI to extract viral patterns and actionable insights.
+
+### Features
+
+- **Hook Analysis**: Extract and analyze the first 3-5 seconds
+  - Transcript of spoken/on-screen content
+  - Visual description of opening
+  - Hook type classification (question, shock, curiosity, etc.)
+  - Effectiveness scoring
+
+- **Full Content Extraction**:
+  - Complete transcript with timestamps
+  - Text overlay detection and extraction
+  - Scene-by-scene visual storyboard
+  - Key moments identification
+
+- **Viral Factors Analysis**:
+  - Multi-dimensional scoring (hook strength, emotional impact, relatability, novelty, etc.)
+  - Explanation of why the video went viral
+  - Pattern matching with successful viral content
+  - Improvement suggestions for content creators
+
+### Usage
+
+```bash
+# Check analysis status
+python video_processor.py analyze-status
+
+# Test analysis on 1 video
+python video_processor.py analyze --test
+
+# Analyze specific number of videos
+python video_processor.py analyze --limit 10
+
+# Analyze all unanalyzed videos
+python video_processor.py analyze
+```
+
+### Configuration
+
+Add to `.env`:
+```bash
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=models/gemini-flash-latest
+MAX_ANALYSIS_RETRIES=3
+```
+
+### Output
+
+Analysis results are stored in the `video_analysis` table with:
+- Hook transcript and storyboard
+- Full transcript with timestamps
+- Text overlays
+- Visual storyboard
+- Key moments
 - Viral factors scoring
+- Viral explanation
 - Improvement suggestions
 
 ## Phase 1 Status: ✅ COMPLETED
