@@ -95,21 +95,28 @@ class VideoProcessor:
         logger.info(f"Fetching unprocessed posts (source: {source})")
 
         if source == "outliers":
-            # Get outliers without video URLs
-            query = """
-                posts(id, post_url, post_id, caption, views),
-                accounts!inner(handle)
-            """
-            result = (self.supabase.table("post_review")
-                     .select(query)
-                     .eq("outlier", True)
-                     .is_("video_file_url", "null")
-                     .execute())
+            # Get outliers without video URLs - need to go through posts table
+            # First get post_ids from post_review
+            review_result = (self.supabase.table("post_review")
+                           .select("post_id")
+                           .eq("outlier", True)
+                           .is_("video_file_url", "null")
+                           .execute())
+
+            if not review_result.data:
+                return []
+
+            post_ids = [row["post_id"] for row in review_result.data]
+
+            # Then get full post details with account info
+            posts_result = (self.supabase.table("posts")
+                          .select("id, post_url, post_id, caption, views, accounts(handle)")
+                          .in_("id", post_ids)
+                          .execute())
 
             posts = []
-            for row in result.data:
-                post = row.get("posts", {})
-                account = row.get("accounts", {})
+            for post in posts_result.data:
+                account = post.get("accounts", {})
                 posts.append({
                     "id": post.get("id"),
                     "post_url": post.get("post_url"),
